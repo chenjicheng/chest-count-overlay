@@ -1,0 +1,20 @@
+{
+  "config.chest_count_overlay.category.general": "General",
+  "config.chest_count_overlay.count_nested": "Count nested container contents",
+  "config.chest_count_overlay.count_nested.description": "Counts readable contents stored inside shulker boxes, bundles, and similar item-stack components.",
+  "config.chest_count_overlay.enabled": "Enable overlay",
+  "config.chest_count_overlay.enabled.description": "Shows the item count overlay for supported chest-like containers.",
+  "config.chest_count_overlay.keybinds": "Shortcut",
+  "config.chest_count_overlay.keybinds.description": "Opens Minecraft's keybind screen. Change the Chest Count Overlay toggle there.",
+  "config.chest_count_overlay.keybinds.open": "Open keybinds",
+  "config.chest_count_overlay.placement": "Placement",
+  "config.chest_count_overlay.placement.auto": "Automatic",
+  "config.chest_count_overlay.placement.description": "Chooses which side of the vanilla container UI the overlay uses.",
+  "config.chest_count_overlay.placement.left": "Left",
+  "config.chest_count_overlay.placement.right": "Right",
+  "config.chest_count_overlay.show_when_empty": "Show for empty containers",
+  "config.chest_count_overlay.show_when_empty.description": "Shows the toggle tab even when the opened supported container has no counted items.",
+  "config.chest_count_overlay.title": "Chest Count Overlay",
+  "key.category.chest_count_overlay.controls": "Chest Count Overlay",
+  "key.chest_count_overlay.toggle_overlay": "Toggle count overlay"
+}

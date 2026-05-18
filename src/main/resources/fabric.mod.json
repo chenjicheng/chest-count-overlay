@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "chest_count_overlay",
+  "version": "${version}",
+  "name": "Chest Count Overlay",
+  "description": "Displays a vanilla-style item count sidebar for chest-like containers.",
+  "authors": [
+    "chenjicheng"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.chenjicheng.chestcountoverlay.ChestCountOverlayClient"
+    ],
+    "modmenu": [
+      "com.chenjicheng.chestcountoverlay.config.ChestCountOverlayModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "chest_count_overlay.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "=${minecraft_version}",
+    "java": ">=21",
+    "fabric-api": "*",
+    "yet_another_config_lib_v3": ">=${yacl_min_version}"
+  }
+}

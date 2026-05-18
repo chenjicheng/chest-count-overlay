@@ -1,0 +1,14 @@
+.gradle/
+build/
+run/
+
+*.class
+*.log
+hs_err_pid*
+replay_pid*
+
+.idea/
+*.iml
+.vscode/
+
+错误报告-*.zip

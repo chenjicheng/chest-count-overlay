@@ -1,0 +1,20 @@
+{
+  "config.chest_count_overlay.category.general": "通用",
+  "config.chest_count_overlay.count_nested": "统计嵌套容器内容",
+  "config.chest_count_overlay.count_nested.description": "统计潜影盒、收纳袋和类似物品栈组件里已经同步到客户端的内容。",
+  "config.chest_count_overlay.enabled": "启用统计栏",
+  "config.chest_count_overlay.enabled.description": "在支持的箱子式容器界面显示物品数量统计栏。",
+  "config.chest_count_overlay.keybinds": "快捷键",
+  "config.chest_count_overlay.keybinds.description": "打开 Minecraft 原版按键设置，在其中修改箱子数量统计的切换按键。",
+  "config.chest_count_overlay.keybinds.open": "打开按键设置",
+  "config.chest_count_overlay.placement": "显示位置",
+  "config.chest_count_overlay.placement.auto": "自动",
+  "config.chest_count_overlay.placement.description": "选择统计栏显示在原版容器 UI 的哪一侧。",
+  "config.chest_count_overlay.placement.left": "左侧",
+  "config.chest_count_overlay.placement.right": "右侧",
+  "config.chest_count_overlay.show_when_empty": "空容器也显示",
+  "config.chest_count_overlay.show_when_empty.description": "支持的容器为空时也显示展开/收回按钮。",
+  "config.chest_count_overlay.title": "箱子数量统计",
+  "key.category.chest_count_overlay.controls": "箱子数量统计",
+  "key.chest_count_overlay.toggle_overlay": "切换统计栏"
+}

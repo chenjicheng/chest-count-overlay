@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.chenjicheng.chestcountoverlay.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "GenericContainerScreenMixin",
+    "HandledScreenInputMixin",
+    "ShulkerBoxScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
