@@ -1,0 +1,69 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Make Gradle Wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Validate tag matches mod version
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          mod_version="$(grep '^mod_version=' gradle.properties | cut -d= -f2-)"
+
+          if [[ "$tag" == "$version" ]]; then
+            echo "::error::Release tags must start with v, for example v${mod_version}."
+            exit 1
+          fi
+
+          if [[ "$version" != "$mod_version" ]]; then
+            echo "::error::Tag ${tag} does not match gradle.properties mod_version=${mod_version}."
+            exit 1
+          fi
+
+      - name: Build
+        run: ./gradlew build --no-daemon
+
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p release-artifacts
+          cp "build/libs/chest_count_overlay-${version}.jar" "release-artifacts/chest_count_overlay-${version}.jar"
+          cp "build/libs/chest_count_overlay-${version}-sources.jar" "release-artifacts/chest_count_overlay-${version}-sources.jar"
+          sha256sum release-artifacts/* > "release-artifacts/chest_count_overlay-${version}.sha256"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release create "${GITHUB_REF_NAME}" release-artifacts/* \
+            --verify-tag \
+            --title "Chest Count Overlay ${version}" \
+            --generate-notes

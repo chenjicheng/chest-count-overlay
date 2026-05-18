@@ -53,6 +53,11 @@ Commands:
 - Run client: `.\gradlew runClient`.
 - Generate sources if mapping names need confirmation: `.\gradlew genSources`.
 
+Release process:
+- Releases are created by GitHub Actions when a tag matching `v*` is pushed.
+- The tag version must match `mod_version` in `gradle.properties`; for example `mod_version=1.0.0` must use tag `v1.0.0`.
+- Release assets are the remapped mod jar, sources jar, and a SHA-256 checksum file from `build/libs`.
+
 ## Implementation Constraints
 
 - Client-only.
