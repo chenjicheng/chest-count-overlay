@@ -27,7 +27,7 @@ public abstract class GenericContainerScreenMixin extends HandledScreen<GenericC
                 this.x,
                 this.y,
                 this.backgroundWidth,
-                this.backgroundHeight,
+                this.backgroundHeight - 1,
                 this.width,
                 this.height,
                 mouseX,

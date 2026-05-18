@@ -166,6 +166,8 @@ Default shortcut update:
 - `ContainerItemCounter` also expands readable nested item contents from synchronized item-stack components. The direct container item itself remains counted, and readable nested contents are added on top of it.
 - Nested contents are multiplied by the parent stack count. For example, two identical container items with the same synchronized contents count both containers and two copies of their contents.
 - Nested expansion is recursive with a fixed depth cap to avoid pathological or corrupt component graphs. If the cap is reached, the current item stack is still counted, but deeper contents are not expanded.
+- Nested expansion also has a total nested stack visit cap per count pass to avoid pathological or corrupt high-branching component graphs. If the cap is reached, direct container slot stacks and already visited nested stacks remain counted, but additional nested stacks and deeper contents are not expanded; this limitation must be logged or otherwise made clear during implementation.
+- Counts must remain exact for all counted stacks; use an overflow-safe numeric representation instead of saturating or wrapping totals.
 - `CountedItem` represents one counted item entry.
 - `OverlayScrollState` owns scroll offset and clamp logic.
 - `ChestCountOverlayRenderer` owns layout, transparent panel drawing, item rendering, scrollbar drawing, mouse hit testing, count text, and tooltip behavior.

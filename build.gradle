@@ -35,6 +35,7 @@ def resourceProperties = [
         version          : project.version.toString(),
         minecraft_version: project.minecraft_version,
         loader_version   : project.loader_version,
+        fabric_min_version: project.fabric_version,
         yacl_min_version : project.yacl_min_version
 ]
 

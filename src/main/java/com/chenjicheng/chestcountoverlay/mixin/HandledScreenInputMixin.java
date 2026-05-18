@@ -64,7 +64,7 @@ public abstract class HandledScreenInputMixin<T extends ScreenHandler> extends S
                 this.x,
                 this.y,
                 this.backgroundWidth,
-                this.backgroundHeight,
+                visualContainerHeight(),
                 this.width,
                 this.height,
                 click.x(),
@@ -94,7 +94,7 @@ public abstract class HandledScreenInputMixin<T extends ScreenHandler> extends S
                 this.x,
                 this.y,
                 this.backgroundWidth,
-                this.backgroundHeight,
+                visualContainerHeight(),
                 this.width,
                 this.height,
                 mouseX,
@@ -117,5 +117,11 @@ public abstract class HandledScreenInputMixin<T extends ScreenHandler> extends S
         }
 
         return 0;
+    }
+
+    private int visualContainerHeight() {
+        return (Object) this instanceof GenericContainerScreen
+                ? this.backgroundHeight - 1
+                : this.backgroundHeight;
     }
 }

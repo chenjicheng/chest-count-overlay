@@ -8,15 +8,24 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.screen.GenericContainerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class ContainerItemCounter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ContainerItemCounter.class);
     private static final int CHEST_COLUMNS = 9;
     private static final int MAX_NESTED_CONTAINER_DEPTH = 8;
-    private static final long K_THRESHOLD = 100_000L;
+    private static final int MAX_NESTED_STACK_VISITS = 16_384;
+    private static final BigInteger K_THRESHOLD = BigInteger.valueOf(100_000L);
+    private static final BigInteger ONE_THOUSAND = BigInteger.valueOf(1_000L);
+    private static boolean loggedNestedVisitLimit;
 
     private ContainerItemCounter() {
     }
@@ -27,7 +36,8 @@ public final class ContainerItemCounter {
 
     public static List<CountedItem> count(ScreenHandler handler, int containerSlotCount) {
         int slotLimit = Math.min(Math.max(0, containerSlotCount), handler.slots.size());
-        List<MutableCountedItem> countedItems = new ArrayList<>();
+        Map<StackKey, MutableCountedItem> countedItems = new LinkedHashMap<>();
+        TraversalState traversalState = new TraversalState();
 
         for (int slotIndex = 0; slotIndex < slotLimit; slotIndex++) {
             Slot slot = handler.slots.get(slotIndex);
@@ -36,41 +46,43 @@ public final class ContainerItemCounter {
                 continue;
             }
 
-            addStackAndNestedContents(countedItems, stack, 1L, slotIndex, 0);
+            addStackAndNestedContents(countedItems, traversalState, stack, BigInteger.ONE, slotIndex, 0);
         }
 
-        countedItems.sort(
-                Comparator.comparingLong((MutableCountedItem item) -> item.totalCount)
+        List<MutableCountedItem> sortedItems = new ArrayList<>(countedItems.values());
+        sortedItems.sort(
+                Comparator.comparing((MutableCountedItem item) -> item.totalCount)
                         .reversed()
-                        .thenComparingInt(item -> item.firstSlot)
+                        .thenComparingInt(item -> item.firstSeenOrder)
         );
 
-        List<CountedItem> result = new ArrayList<>(countedItems.size());
-        for (MutableCountedItem item : countedItems) {
+        List<CountedItem> result = new ArrayList<>(sortedItems.size());
+        for (MutableCountedItem item : sortedItems) {
             result.add(new CountedItem(item.stack, item.totalCount, item.firstSlot));
         }
         return result;
     }
 
-    public static String formatCount(long count) {
-        if (count >= K_THRESHOLD) {
-            return (count / 1_000L) + "k";
+    public static String formatCount(BigInteger count) {
+        if (count.compareTo(K_THRESHOLD) >= 0) {
+            return count.divide(ONE_THOUSAND) + "k";
         }
-        return Long.toString(count);
+        return count.toString();
     }
 
     private static void addStackAndNestedContents(
-            List<MutableCountedItem> countedItems,
+            Map<StackKey, MutableCountedItem> countedItems,
+            TraversalState traversalState,
             ItemStack stack,
-            long parentMultiplier,
+            BigInteger parentMultiplier,
             int firstSlot,
             int depth
     ) {
-        if (stack.isEmpty() || parentMultiplier <= 0L) {
+        if (stack.isEmpty() || parentMultiplier.signum() <= 0) {
             return;
         }
 
-        long totalCount = Math.multiplyExact((long) stack.getCount(), parentMultiplier);
+        BigInteger totalCount = BigInteger.valueOf(stack.getCount()).multiply(parentMultiplier);
         addStack(countedItems, stack, totalCount, firstSlot);
 
         if (!ChestCountOverlayConfig.get().countNestedContainerContents() || depth >= MAX_NESTED_CONTAINER_DEPTH) {
@@ -85,49 +97,103 @@ public final class ContainerItemCounter {
         ContainerComponent container = stack.get(DataComponentTypes.CONTAINER);
         if (container != null) {
             for (ItemStack nestedStack : container.iterateNonEmptyCopy()) {
-                addStackAndNestedContents(countedItems, nestedStack, totalCount, firstSlot, depth + 1);
+                if (!traversalState.tryVisitNestedStack()) {
+                    logNestedVisitLimitReached();
+                    return;
+                }
+                addStackAndNestedContents(countedItems, traversalState, nestedStack, totalCount, firstSlot, depth + 1);
             }
         }
 
         BundleContentsComponent bundleContents = stack.get(DataComponentTypes.BUNDLE_CONTENTS);
         if (bundleContents != null && !bundleContents.isEmpty()) {
             for (ItemStack nestedStack : bundleContents.iterateCopy()) {
-                addStackAndNestedContents(countedItems, nestedStack, totalCount, firstSlot, depth + 1);
+                if (!traversalState.tryVisitNestedStack()) {
+                    logNestedVisitLimitReached();
+                    return;
+                }
+                addStackAndNestedContents(countedItems, traversalState, nestedStack, totalCount, firstSlot, depth + 1);
             }
         }
     }
 
-    private static void addStack(List<MutableCountedItem> countedItems, ItemStack stack, long totalCount, int firstSlot) {
-        MutableCountedItem existing = findMatching(countedItems, stack);
+    private static void addStack(
+            Map<StackKey, MutableCountedItem> countedItems,
+            ItemStack stack,
+            BigInteger totalCount,
+            int firstSlot
+    ) {
+        StackKey key = StackKey.of(stack);
+        MutableCountedItem existing = countedItems.get(key);
         if (existing == null) {
             ItemStack representative = stack.copy();
             representative.setCount(1);
-            countedItems.add(new MutableCountedItem(representative, totalCount, firstSlot));
+            countedItems.put(key, new MutableCountedItem(representative, totalCount, firstSlot, countedItems.size()));
         } else {
-            existing.totalCount = Math.addExact(existing.totalCount, totalCount);
+            existing.totalCount = existing.totalCount.add(totalCount);
             existing.firstSlot = Math.min(existing.firstSlot, firstSlot);
         }
     }
 
-    private static MutableCountedItem findMatching(List<MutableCountedItem> countedItems, ItemStack stack) {
-        for (MutableCountedItem countedItem : countedItems) {
-            // This helper compares item identity and data components in modern Minecraft.
-            if (ItemStack.areItemsAndComponentsEqual(countedItem.stack, stack)) {
-                return countedItem;
-            }
+    private static void logNestedVisitLimitReached() {
+        if (!loggedNestedVisitLimit) {
+            loggedNestedVisitLimit = true;
+            LOGGER.warn(
+                    "Nested container counting reached the per-pass visit cap of {}; additional nested stacks were not counted.",
+                    MAX_NESTED_STACK_VISITS
+            );
         }
-        return null;
+    }
+
+    private record StackKey(ItemStack stack) {
+        private static StackKey of(ItemStack stack) {
+            ItemStack keyStack = stack.copy();
+            keyStack.setCount(1);
+            return new StackKey(keyStack);
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return this == object
+                    || object instanceof StackKey other
+                    && ItemStack.areItemsAndComponentsEqual(this.stack, other.stack);
+        }
+
+        @Override
+        public int hashCode() {
+            /*
+             * Keep this shallow. Component hash codes can recursively walk nested
+             * ItemStacks before the nested traversal visit cap has a chance to run.
+             * Exact merging is still enforced by equals().
+             */
+            return this.stack.getItem().hashCode();
+        }
     }
 
     private static final class MutableCountedItem {
         private final ItemStack stack;
-        private long totalCount;
+        private BigInteger totalCount;
         private int firstSlot;
+        private final int firstSeenOrder;
 
-        private MutableCountedItem(ItemStack stack, long totalCount, int firstSlot) {
+        private MutableCountedItem(ItemStack stack, BigInteger totalCount, int firstSlot, int firstSeenOrder) {
             this.stack = stack;
             this.totalCount = totalCount;
             this.firstSlot = firstSlot;
+            this.firstSeenOrder = firstSeenOrder;
+        }
+    }
+
+    private static final class TraversalState {
+        private int nestedStackVisits;
+
+        private boolean tryVisitNestedStack() {
+            if (nestedStackVisits >= MAX_NESTED_STACK_VISITS) {
+                return false;
+            }
+
+            nestedStackVisits++;
+            return true;
         }
     }
 }

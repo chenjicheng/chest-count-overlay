@@ -55,7 +55,7 @@ public final class ChestCountOverlayRenderer {
             int containerX,
             int containerY,
             int containerWidth,
-            int containerHeight,
+            int visualContainerHeight,
             int screenWidth,
             int screenHeight,
             int mouseX,
@@ -74,7 +74,7 @@ public final class ChestCountOverlayRenderer {
             return;
         }
 
-        Layout layout = createLayout(containerX, containerY, containerWidth, containerHeight, screenWidth, screenHeight);
+        Layout layout = createLayout(containerX, containerY, containerWidth, visualContainerHeight, screenWidth, screenHeight);
         int maxFirstVisibleIndex = maxFirstVisibleIndex(items.size(), layout.visibleRows());
         SCROLL_STATE.clampTo(maxFirstVisibleIndex);
         float progress = updateAnimationProgress();
@@ -92,7 +92,7 @@ public final class ChestCountOverlayRenderer {
             int containerX,
             int containerY,
             int containerWidth,
-            int containerHeight,
+            int visualContainerHeight,
             int screenWidth,
             int screenHeight,
             double mouseX,
@@ -112,13 +112,13 @@ public final class ChestCountOverlayRenderer {
         }
 
         ensureActiveHandler(handler);
-        Layout layout = createLayout(containerX, containerY, containerWidth, containerHeight, screenWidth, screenHeight);
-        if (!buttonLayout(layout).contains(mouseX, mouseY)) {
-            return false;
+        Layout layout = createLayout(containerX, containerY, containerWidth, visualContainerHeight, screenWidth, screenHeight);
+        if (buttonLayout(layout).contains(mouseX, mouseY)) {
+            toggleExpanded();
+            return true;
         }
 
-        toggleExpanded();
-        return true;
+        return targetExpanded && layout.containsPanel(mouseX, mouseY);
     }
 
     public static void toggleExpanded() {
@@ -132,7 +132,7 @@ public final class ChestCountOverlayRenderer {
             int containerX,
             int containerY,
             int containerWidth,
-            int containerHeight,
+            int visualContainerHeight,
             int screenWidth,
             int screenHeight,
             double mouseX,
@@ -143,12 +143,16 @@ public final class ChestCountOverlayRenderer {
             return false;
         }
 
+        if (verticalAmount == 0.0D) {
+            return false;
+        }
+
         List<CountedItem> items = ContainerItemCounter.count(handler, containerSlotCount);
         if (items.isEmpty()) {
             return false;
         }
 
-        Layout layout = createLayout(containerX, containerY, containerWidth, containerHeight, screenWidth, screenHeight);
+        Layout layout = createLayout(containerX, containerY, containerWidth, visualContainerHeight, screenWidth, screenHeight);
         if (!targetExpanded || animationProgress < 0.98F || layout.visibleRows() <= 0 || !layout.containsRows(mouseX, mouseY)) {
             return false;
         }
@@ -390,13 +394,12 @@ public final class ChestCountOverlayRenderer {
             int containerX,
             int containerY,
             int containerWidth,
-            int containerHeight,
+            int visualContainerHeight,
             int screenWidth,
             int screenHeight
     ) {
         int panelWidth = Math.min(PANEL_WIDTH, Math.max(1, screenWidth));
-        int visualContainerHeight = Math.max(1, containerHeight - 1);
-        int panelHeight = Math.min(visualContainerHeight, Math.max(1, screenHeight));
+        int panelHeight = Math.min(Math.max(1, visualContainerHeight), Math.max(1, screenHeight));
         int contentHeight = Math.max(0, panelHeight - HEADER_HEIGHT);
         int visibleRows = contentHeight / ROW_HEIGHT;
 
@@ -448,6 +451,10 @@ public final class ChestCountOverlayRenderer {
 
         private boolean containsRows(double mouseX, double mouseY) {
             return mouseX >= x && mouseX < right() && mouseY >= contentY() && mouseY < bottom();
+        }
+
+        private boolean containsPanel(double mouseX, double mouseY) {
+            return mouseX >= x && mouseX < right() && mouseY >= y && mouseY < bottom();
         }
     }
 
