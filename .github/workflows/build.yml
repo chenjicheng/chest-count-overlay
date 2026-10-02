@@ -1,0 +1,66 @@
+name: Build and test mod
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Fabric 1.21.11 / client
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-provider: basic
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Test release and screenshot validation
+        run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Validate release version
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: python3 scripts/release.py metadata --tag "$RELEASE_TAG"
+      - name: Build
+        run: ./gradlew build --no-daemon --console=plain
+      - name: Client behavior and screenshot tests
+        env:
+          LIBGL_ALWAYS_SOFTWARE: 'true'
+        run: xvfb-run -a ./gradlew runClientGameTest -PacceptMinecraftEula --no-daemon --console=plain
+      - name: Verify generated screenshots
+        run: python3 scripts/collect_screenshots.py --output build/verified-screenshots
+      - name: Validate and stage release artifacts
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: python3 scripts/release.py package --tag "$RELEASE_TAG"
+      - name: Upload tested distribution
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mod-distribution
+          path: build/release/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload screenshots and test reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: client-test-evidence
+          path: |
+            build/run/clientGameTest/documentation-screenshots/
+            build/run/clientGameTest/logs/
+            build/run/clientGameTest/crash-reports/
+            build/reports/
+          if-no-files-found: warn
+          retention-days: 14

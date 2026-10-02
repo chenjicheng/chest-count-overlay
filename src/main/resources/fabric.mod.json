@@ -7,6 +7,11 @@
   "authors": [
     "chenjicheng"
   ],
+  "contact": {
+    "homepage": "https://chenjicheng.github.io/chest-count-overlay/",
+    "sources": "https://github.com/chenjicheng/chest-count-overlay",
+    "issues": "https://github.com/chenjicheng/chest-count-overlay/issues"
+  },
   "license": "MIT",
   "environment": "client",
   "entrypoints": {

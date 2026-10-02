@@ -2,68 +2,77 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  release:
-    name: Build and publish release
+  verify:
+    uses: ./.github/workflows/build.yml
+    with:
+      release_tag: ${{ github.ref_name }}
+  publish:
+    needs: verify
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
+    permissions:
+      contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
-
-      - name: Set up Java
-        uses: actions/setup-java@v5
+          persist-credentials: false
+      - name: Read validated release metadata
+        id: metadata
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python3 scripts/release.py metadata --tag "$RELEASE_TAG"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Make Gradle Wrapper executable
-        run: chmod +x ./gradlew
-
-      - name: Validate tag matches mod version
-        shell: bash
-        run: |
-          tag="${GITHUB_REF_NAME}"
-          version="${tag#v}"
-          mod_version="$(grep '^mod_version=' gradle.properties | cut -d= -f2-)"
-
-          if [[ "$tag" == "$version" ]]; then
-            echo "::error::Release tags must start with v, for example v${mod_version}."
-            exit 1
-          fi
-
-          if [[ "$version" != "$mod_version" ]]; then
-            echo "::error::Tag ${tag} does not match gradle.properties mod_version=${mod_version}."
-            exit 1
-          fi
-
-      - name: Build
-        run: ./gradlew build --no-daemon
-
-      - name: Prepare release assets
-        shell: bash
-        run: |
-          version="${GITHUB_REF_NAME#v}"
-          mkdir -p release-artifacts
-          cp "build/libs/chest_count_overlay-${version}.jar" "release-artifacts/chest_count_overlay-${version}.jar"
-          cp "build/libs/chest_count_overlay-${version}-sources.jar" "release-artifacts/chest_count_overlay-${version}-sources.jar"
-          sha256sum release-artifacts/* > "release-artifacts/chest_count_overlay-${version}.sha256"
-
-      - name: Publish GitHub Release
+          name: mod-distribution
+          path: dist
+      - name: Verify downloaded artifacts
+        working-directory: dist
+        run: sha256sum --check --strict SHA256SUMS
+      - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        shell: bash
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ steps.metadata.outputs.tag }}
+          RELEASE_TITLE: ${{ steps.metadata.outputs.title }}
+          PRERELEASE: ${{ steps.metadata.outputs.prerelease }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          gh release create "${GITHUB_REF_NAME}" release-artifacts/* \
-            --verify-tag \
-            --title "Chest Count Overlay ${version}" \
-            --generate-notes
+          flags=()
+          if [[ "$PRERELEASE" == true ]]; then
+            flags+=(--prerelease --latest=false)
+          fi
+          # Upload into a draft so a partially uploaded release is never public.
+          gh release create "$RELEASE_TAG" dist/*.jar dist/SHA256SUMS \
+            --verify-tag --draft --title "$RELEASE_TITLE" \
+            --notes-file dist/release-notes.md "${flags[@]}"
+          gh release edit "$RELEASE_TAG" --draft=false "${flags[@]}"
+  publish-modrinth:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: mod-distribution
+          path: dist
+      - name: Verify downloaded artifacts
+        working-directory: dist
+        run: sha256sum --check --strict SHA256SUMS
+      - name: Publish tested JAR to Modrinth
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python3 scripts/modrinth.py --tag "$RELEASE_TAG"

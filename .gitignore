@@ -1,6 +1,14 @@
 .gradle/
 build/
 run/
+.tools/
+__pycache__/
+*.pyc
+node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+.env
+.env.*
 
 *.class
 *.log

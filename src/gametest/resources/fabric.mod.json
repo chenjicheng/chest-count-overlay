@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "chest_count_overlay_test",
+  "version": "1.0.0",
+  "name": "Chest Count Overlay screenshot tests",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "com.chenjicheng.chestcountoverlay.DocumentationScreenshots"
+    ]
+  }
+}
