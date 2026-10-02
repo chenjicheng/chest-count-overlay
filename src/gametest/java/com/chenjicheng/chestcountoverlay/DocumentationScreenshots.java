@@ -46,10 +46,9 @@ public final class DocumentationScreenshots implements FabricClientGameTest {
     private void generate(ClientGameTestContext context) throws Exception {
         Files.createDirectories(output);
         Files.deleteIfExists(output.resolve("completed.json"));
-        context.getInput().resizeWindow(1440, 900);
         context.runOnClient(client -> {
-            client.options.getGuiScale().setValue(3);
-            client.onResolutionChanged();
+            // Keep software-rendered CI startup inexpensive; capture uses full resolution below.
+            client.options.getViewDistance().setValue(2);
             ChestCountOverlayConfig.get().setEnabled(true);
             ChestCountOverlayConfig.get().setPlacement(ChestCountOverlayConfig.Placement.LEFT);
             ChestCountOverlayConfig.get().setShowWhenEmpty(false);
@@ -57,6 +56,11 @@ public final class DocumentationScreenshots implements FabricClientGameTest {
         });
         try (var world = context.worldBuilder().create()) {
             world.getClientWorld().waitForChunksRender();
+            context.getInput().resizeWindow(1440, 900);
+            context.runOnClient(client -> {
+                client.options.getGuiScale().setValue(3);
+                client.onResolutionChanged();
+            });
             openChest(context, world, 3, "Chest", inventory -> {
                 inventory.setStack(0, new ItemStack(Items.STONE, 64));
                 inventory.setStack(1, new ItemStack(Items.STONE, 32));

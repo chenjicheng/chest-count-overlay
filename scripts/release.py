@@ -58,6 +58,8 @@ def package(root, tag, output):
     with ZipFile(paths[1]) as jar:
         if not any(name.endswith(".java") for name in jar.namelist()):
             raise ValueError("Sources JAR contains no Java source")
+        if not any(name.startswith("LICENSE") for name in jar.namelist()):
+            raise ValueError("MIT license is missing from the sources JAR")
     if output.exists() and any(output.iterdir()):
         raise ValueError("Release staging directory must be empty")
     output.mkdir(parents=True, exist_ok=True)

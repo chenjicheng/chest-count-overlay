@@ -13,7 +13,7 @@ Use the project Wrapper, which verifies the Gradle distribution SHA256. Set `JAV
 python -m unittest discover -s scripts -p 'test_*.py' -v
 ```
 
-On Linux/macOS use `./gradlew build`. Installable output is `build/libs/chest_count_overlay-<mod_version>.jar`, with a matching `-sources.jar`. This project's version and filename retain plain semantic versions without a Minecraft suffix. Future installable JARs include the MIT license.
+On Linux/macOS use `./gradlew build`. Installable output is `build/libs/chest_count_overlay-<mod_version>.jar`, with a matching `-sources.jar`. This project's version and filename retain plain semantic versions without a Minecraft suffix. Both future JARs include the MIT license.
 
 ## Code map and boundaries
 
@@ -40,7 +40,7 @@ Generic-container visual height is `backgroundHeight - 1`; rows are 18 pixels, h
 
 Use the switch only after accepting the [Minecraft EULA](https://aka.ms/MinecraftEULA). Loom creates the test environment/world under `build/run/clientGameTest`, without touching a personal save. The harness uses the [Fabric client test API](https://docs.fabricmc.net/1.21.11/develop/automatic-testing).
 
-`DocumentationScreenshots` opens real vanilla menus through the integrated server and waits for synchronized counts. It checks inventory exclusion, nested counting, the default shortcut, collapse and scrolling, then opens English/Chinese YACL settings. Window size is 1440×900 with GUI scale 3. Screenshots use the production renderer; the harness only clears vanilla recipe notifications before capture.
+`DocumentationScreenshots` opens real vanilla menus through the integrated server and waits for synchronized counts. It checks inventory exclusion, nested counting, the default shortcut, collapse and scrolling, then opens English/Chinese YACL settings. World loading uses the default small window and a two-chunk view distance to reduce software-rendered CI startup costs, then switches to 1440×900 with GUI scale 3 for capture. Screenshots use the production renderer; the harness only clears vanilla recipe notifications before capture.
 
 Raw images are saved under `build/run/clientGameTest/documentation-screenshots`. Only a complete run writes `completed.json`; failed runs never copy images. `collect_screenshots.py` checks the full scene list, PNG headers and dimensions before copying unchanged bytes into `docs/public/images`. Visually inspect every image before publishing.
 

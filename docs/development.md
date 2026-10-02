@@ -13,7 +13,7 @@
 python -m unittest discover -s scripts -p 'test_*.py' -v
 ```
 
-Linux/macOS 使用 `./gradlew build`。正式产物为 `build/libs/chest_count_overlay-<mod_version>.jar`，源码为同版本 `-sources.jar`。`mod_version` 保持纯语义版本；本项目不会向版本号或文件名追加 Minecraft 后缀。未来构建的正式 JAR 包含 MIT 许可证。
+Linux/macOS 使用 `./gradlew build`。正式产物为 `build/libs/chest_count_overlay-<mod_version>.jar`，源码为同版本 `-sources.jar`。`mod_version` 保持纯语义版本；本项目不会向版本号或文件名追加 Minecraft 后缀。未来构建的两个 JAR 都包含 MIT 许可证。
 
 ## 代码结构与边界
 
@@ -40,7 +40,7 @@ Generic 箱类屏幕的可见高度为 `backgroundHeight - 1`，行高固定 18�
 
 仅在接受 [Minecraft EULA](https://aka.ms/MinecraftEULA) 后使用该开关。脚本运行 `runClientGameTest -PacceptMinecraftEula`，Loom 在 `build/run/clientGameTest` 创建隔离环境与测试世界，不使用个人存档。测试基于 [Fabric 客户端测试 API](https://docs.fabricmc.net/1.21.11/develop/automatic-testing)。
 
-`DocumentationScreenshots` 通过集成服务器打开真实原版菜单，等待同步后的物品计数，检查玩家背包排除、嵌套开关、默认快捷键、折叠和滚动，再打开英文/中文 YACL 设置。固定窗口 1440×900、GUI 缩放 3；截图使用实际生产渲染代码。图片生成时只清理游戏配方提示，不绘制或修补统计栏。
+`DocumentationScreenshots` 通过集成服务器打开真实原版菜单，等待同步后的物品计数，检查玩家背包排除、嵌套开关、默认快捷键、折叠和滚动，再打开英文/中文 YACL 设置。测试世界先以默认小窗口和 2 区块视距加载，减少软件渲染 CI 的启动开销；截图时切换到 1440×900、GUI 缩放 3。截图使用实际生产渲染代码。图片生成时只清理游戏配方提示，不绘制或修补统计栏。
 
 截图首先保存到 `build/run/clientGameTest/documentation-screenshots`；只有全部场景完成才写 `completed.json`。运行失败不会复制图片。`collect_screenshots.py` 验证完整场景、PNG 头和分辨率，再原字节复制到 `docs/public/images`。发布前仍要逐张视觉检查，测试成功不等于画面合格。
 

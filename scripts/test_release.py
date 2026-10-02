@@ -39,6 +39,7 @@ class ReleaseTests(unittest.TestCase):
                 jar.writestr(extra, b"unwanted")
         with ZipFile(self.libs / f"{stem}-sources.jar", "w") as jar:
             jar.writestr("com/chenjicheng/chestcountoverlay/ChestCountOverlayClient.java", "class Source {}")
+            jar.writestr("LICENSE_chest_count_overlay", "MIT")
 
     def test_alpha_and_stable_release_classification(self):
         self.assertEqual(metadata(self.root, "v0.1.0-alpha")["prerelease"], "true")
@@ -83,6 +84,13 @@ class ReleaseTests(unittest.TestCase):
         self.jars()
         self.notes.unlink()
         with self.assertRaises(FileNotFoundError):
+            package(self.root, "v0.1.0-alpha", self.root / "dist")
+
+    def test_sources_archive_must_include_its_license(self):
+        self.jars()
+        with ZipFile(self.libs / "chest_count_overlay-0.1.0-alpha-sources.jar", "w") as jar:
+            jar.writestr("Source.java", "class Source {}")
+        with self.assertRaisesRegex(ValueError, "license"):
             package(self.root, "v0.1.0-alpha", self.root / "dist")
 
     def test_external_runtime_libraries_must_not_be_bundled(self):

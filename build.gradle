@@ -74,3 +74,9 @@ jar {
         rename { licenseFileName }
     }
 }
+
+tasks.named('sourcesJar') {
+    from('LICENSE') {
+        rename { licenseFileName }
+    }
+}
