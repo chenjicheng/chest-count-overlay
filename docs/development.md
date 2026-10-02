@@ -47,11 +47,11 @@ Generic 箱类屏幕的可见高度为 `backgroundHeight - 1`，行高固定 18�
 Linux 图形测试可使用：
 
 ```sh
-xvfb-run -a ./gradlew runClientGameTest -PacceptMinecraftEula --no-daemon --console=plain
+xvfb-run -a ./gradlew runClientGameTest -PacceptMinecraftEula -PciClientGameTest --no-daemon --console=plain
 python3 scripts/collect_screenshots.py
 ```
 
-需要 Xvfb 与支持 Minecraft 的 OpenGL 环境。CI 上传截图和日志供检查；CI 不自动提交或覆盖仓库中的文档图片。修改夹具后先重新生成并检查图片，再更新相关描述。
+需要 Xvfb 与支持 Minecraft 的 OpenGL 环境。`ciClientGameTest` 显式采用 Fabric 官方针对 CI 的 `fabric.client.gametest.disableNetworkSynchronizer=true`：它关闭测试框架的额外网络时序协调，不关闭 Minecraft 网络通信。菜单/物品同步仍通过真实连接，所有等待条件、数量和输入断言保持启用；捕获前还等待展开/收起动画稳定。CI 上传截图和日志供检查；CI 不自动提交或覆盖仓库中的文档图片。修改夹具后先重新生成并检查图片，再更新相关描述。
 
 ## 发布流程
 

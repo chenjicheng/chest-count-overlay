@@ -191,6 +191,8 @@ public final class DocumentationScreenshots implements FabricClientGameTest {
         if (name.startsWith("cco-settings")) {
             context.waitFor(client -> client.currentScreen != null && client.currentScreen.getTitle().getString()
                     .equals(Text.translatable("config.chest_count_overlay.title").getString()));
+        } else {
+            context.waitFor(client -> animationSettled());
         }
         context.getInput().setCursorPos(0, 0);
         if (name.startsWith("cco-settings")) context.getInput().setCursorPos(240, 305);
@@ -204,5 +206,16 @@ public final class DocumentationScreenshots implements FabricClientGameTest {
         var field = ChestCountOverlayRenderer.class.getDeclaredField("targetExpanded");
         field.setAccessible(true);
         return field.getBoolean(null);
+    }
+
+    private static boolean animationSettled() {
+        try {
+            var field = ChestCountOverlayRenderer.class.getDeclaredField("animationProgress");
+            field.setAccessible(true);
+            float progress = field.getFloat(null);
+            return expanded() ? progress >= 0.999F : progress <= 0.001F;
+        } catch (ReflectiveOperationException exception) {
+            throw new AssertionError("Unable to verify the captured overlay animation", exception);
+        }
     }
 }

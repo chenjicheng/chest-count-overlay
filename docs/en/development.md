@@ -47,11 +47,11 @@ Raw images are saved under `build/run/clientGameTest/documentation-screenshots`.
 Linux graphical testing:
 
 ```sh
-xvfb-run -a ./gradlew runClientGameTest -PacceptMinecraftEula --no-daemon --console=plain
+xvfb-run -a ./gradlew runClientGameTest -PacceptMinecraftEula -PciClientGameTest --no-daemon --console=plain
 python3 scripts/collect_screenshots.py
 ```
 
-Requires Xvfb and an OpenGL environment supporting Minecraft. CI uploads screenshots/logs, without committing or replacing documentation images automatically. Regenerate and inspect images after changing a fixture.
+Requires Xvfb and an OpenGL environment supporting Minecraft. `ciClientGameTest` explicitly applies Fabric's documented CI setting, `fabric.client.gametest.disableNetworkSynchronizer=true`. This disables the test framework's extra network tick coordination, not Minecraft networking. Real connections still synchronize menus/items, and all readiness, count and input assertions remain enabled. Capture also waits for expansion/collapse animation to settle. CI uploads screenshots/logs, without committing or replacing documentation images automatically. Regenerate and inspect images after changing a fixture.
 
 ## Release process
 

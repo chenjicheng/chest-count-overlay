@@ -39,7 +39,7 @@ jobs:
         env:
           LIBGL_ALWAYS_SOFTWARE: 'true'
           LP_NUM_THREADS: '2'
-        run: xvfb-run -a ./gradlew runClientGameTest -PacceptMinecraftEula --no-daemon --console=plain
+        run: xvfb-run -a ./gradlew runClientGameTest -PacceptMinecraftEula -PciClientGameTest --no-daemon --console=plain
       - name: Verify generated screenshots
         run: python3 scripts/collect_screenshots.py --output build/verified-screenshots
       - name: Validate and stage release artifacts

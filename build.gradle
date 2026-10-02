@@ -41,6 +41,14 @@ fabricApi {
     }
 }
 
+if (providers.gradleProperty('ciClientGameTest').isPresent()) {
+    // Fabric documents this test-only tick-coordination setting for CI runners.
+    // Vanilla networking and every menu/count assertion remain enabled.
+    tasks.named('runClientGameTest') {
+        jvmArgs '-Dfabric.client.gametest.disableNetworkSynchronizer=true'
+    }
+}
+
 def resourceProperties = [
         version          : project.version.toString(),
         minecraft_version: project.minecraft_version,
